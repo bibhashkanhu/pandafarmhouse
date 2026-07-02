@@ -1,0 +1,112 @@
+{
+  "theme": "Light",
+  "archetype": "Organic & Earthy (Archetype 1)",
+  "design_philosophy": "Sacred Minimalism and Celestial Visual Harmony. The Panda Farm House landing page must feel like a premium farm-to-table editorial experience rather than a generic agricultural site. We are mixing high-end culinary aesthetics with organic farming. Use generous negative space, sophisticated serif typography, and tactile, earthy color palettes to build trust and convey premium quality. Avoid standard Bootstrap-style grids; embrace asymmetry and overlapping elements to tell a visual story.",
+  "colors": {
+    "primary": "#2E7D32",
+    "secondary": "#4CAF50",
+    "accent": "#FBC02D",
+    "background_base": "#FDFBF7",
+    "surface": "#FFFFFF",
+    "surface_muted": "#F4F1EA",
+    "text_primary": "#1A2E1A",
+    "text_secondary": "#6D4C41",
+    "border": "#E5E0D8",
+    "glass_bg": "bg-white/70 backdrop-blur-xl backdrop-saturate-150 border-white/40"
+  },
+  "typography": {
+    "headings_font": "Cormorant Garamond",
+    "body_font": "Outfit",
+    "scale": {
+      "h1": "text-5xl sm:text-6xl tracking-tighter leading-none font-medium text-[#1A2E1A]",
+      "h2": "text-4xl sm:text-5xl tracking-tight leading-tight text-[#1A2E1A]",
+      "h3": "text-2xl sm:text-3xl tracking-tight text-[#1A2E1A]",
+      "h4": "text-xl font-medium tracking-tight",
+      "body": "text-base sm:text-lg leading-relaxed font-light text-[#6D4C41]",
+      "overline": "text-sm uppercase tracking-[0.2em] font-medium text-[#2E7D32]"
+    }
+  },
+  "layout_spacing": {
+    "container": "max-w-7xl mx-auto px-6 md:px-12",
+    "section": "py-24 md:py-32",
+    "bento_grid": "grid grid-cols-1 md:grid-cols-12 gap-8 lg:gap-12",
+    "optical_alignment": "ensure text blocks next to imagery have internal padding (e.g., p-8 md:p-12) to breathe."
+  },
+  "components": {
+    "navigation": {
+      "style": "Sticky at top, z-50. Use Crystal Glassmorphism (bg-white/70 backdrop-blur-xl border-b border-white/40). Must include brand name, 4-5 links, and a primary CTA 'Visit Us'. Ensure contrast over hero image by enforcing glass effect."
+    },
+    "hero": {
+      "style": "Full height (min-h-[90vh]), parallax background image. Overlay must be a gradient (bg-gradient-to-r from-black/60 via-black/30 to-transparent) ensuring the text 'Fresh From Nature, Delivered With Trust' pops. The image must remain visible and vibrant."
+    },
+    "buttons": {
+      "primary": "bg-[#2E7D32] text-white px-8 py-4 rounded-full hover:bg-[#1A2E1A] transition-colors duration-300 shadow-lg hover:shadow-xl font-medium tracking-wide",
+      "secondary": "border border-[#2E7D32] text-[#2E7D32] px-8 py-4 rounded-full hover:bg-[#2E7D32] hover:text-white transition-colors duration-300",
+      "floating_whatsapp": "fixed bottom-8 right-8 z-50 bg-[#25D366] text-white p-4 rounded-full shadow-2xl hover:scale-110 transition-transform flex items-center justify-center",
+      "back_to_top": "fixed bottom-8 left-8 z-50 bg-[#FDFBF7] text-[#1A2E1A] p-4 rounded-full shadow-lg border border-[#E5E0D8] hover:bg-[#F4F1EA] transition-all"
+    },
+    "cards": {
+      "services": "Use subtle roundness (rounded-2xl). Flat surface with 1px border (#E5E0D8). On hover: slight lift (-translate-y-2), subtle shadow (shadow-xl), and image zoom effect within overflow-hidden container.",
+      "reviews": "Clean, minimalist cards. bg-[#F4F1EA] rounded-xl p-8. Include Google star rating visually (Golden Yellow #FBC02D)."
+    },
+    "gallery": {
+      "style": "Masonry layout or staggered Tetris grid. Mix portrait and landscape aspect ratios. Images must have overflow-hidden, rounded-xl, and slight brightness reduction until hovered."
+    }
+  },
+  "animations": {
+    "scroll": "MUST use Lenis for smooth momentum scrolling. It gives a premium, weighty feel.",
+    "reveals": "Use framer-motion for staggered fade-up reveals on scroll for text blocks and cards.",
+    "counters": "Animated number counters for the Statistics section using framer-motion's useInView.",
+    "parallax": "Use framer-motion useScroll and useTransform for hero image and subtle background elements."
+  },
+  "media": {
+    "icons_library": "lucide-react",
+    "images": {
+      "hero_bg": {
+        "url": "https://images.unsplash.com/photo-1721292175149-8a929b7635f7",
+        "alt": "Sun setting over a lush green farm field"
+      },
+      "about_section": {
+        "url": "https://images.unsplash.com/photo-1551649001-7a2482d98d05",
+        "alt": "Farmer holding freshly harvested beetroots"
+      },
+      "service_vegetables": {
+        "url": "https://images.pexels.com/photos/5425794/pexels-photo-5425794.jpeg",
+        "alt": "Basket filled with fresh organic vegetables"
+      },
+      "service_mushrooms": {
+        "url": "https://images.unsplash.com/photo-1552825898-07e419204683",
+        "alt": "Fresh white mushrooms cultivation"
+      },
+      "service_fish": {
+        "url": "https://images.unsplash.com/photo-1541441056316-443fff347c40",
+        "alt": "Fresh fish swimming in clear water"
+      },
+      "service_poultry": {
+        "url": "https://images.unsplash.com/photo-1606443589134-2c65a11ac828",
+        "alt": "Brown hen on green grass at poultry farm"
+      },
+      "gallery_1": {
+        "url": "https://images.pexels.com/photos/5078745/pexels-photo-5078745.jpeg",
+        "alt": "Sunrise over rural farm and farmhouse"
+      },
+      "gallery_2": {
+        "url": "https://images.pexels.com/photos/8477070/pexels-photo-8477070.jpeg",
+        "alt": "Fresh patty pan squash in rustic kitchen"
+      },
+      "gallery_3": {
+        "url": "https://images.unsplash.com/photo-1754810940905-19a8d26f870e",
+        "alt": "Rows of cabbage plants at sunrise"
+      },
+      "gallery_4": {
+        "url": "https://images.pexels.com/photos/9117894/pexels-photo-9117894.jpeg",
+        "alt": "Hands pulling freshly harvested onions"
+      }
+    }
+  },
+  "technical_requirements": {
+    "testing": "All interactive elements (buttons, links, forms, tabs) MUST include data-testid attribute in kebab-case, e.g., data-testid='hero-cta-button', data-testid='contact-form-submit'.",
+    "accessibility": "Ensure text over images has sufficient contrast. Use semantic HTML. Form inputs must have labels. Focus states must be visible.",
+    "responsiveness": "Mobile-first approach. Ensure generous padding on mobile. Images must not exceed 80vh on mobile."
+  }
+}
