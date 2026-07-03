@@ -2,12 +2,43 @@ import React, { useCallback, useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { X, ChevronLeft, ChevronRight, Camera } from "lucide-react";
 import { FARM } from "@/constants/testIds";
+import { FARM_PHOTOS } from "@/constants/farmPhotos";
 
 const IMAGES = [
   {
+    src: FARM_PHOTOS.farmFieldsWaterTank,
+    alt: "Open farm fields at Panda Farm House, Balasore",
+    label: "Farm landscapes",
+    h: "mid",
+  },
+  {
+    src: FARM_PHOTOS.fishHarvest,
+    alt: "Fresh freshwater fish harvest at Panda Farm House",
+    label: "Fish harvest",
+    h: "tall",
+  },
+  {
+    src: FARM_PHOTOS.visitorGroup,
+    alt: "Visitors enjoying a day at Panda Farm House",
+    label: "Farm visitors",
+    h: "mid",
+  },
+  {
+    src: FARM_PHOTOS.farmLandWide,
+    alt: "Wide view of Panda Farm House land in Banaparia, Odisha",
+    label: "Our land",
+    h: "short",
+  },
+  {
+    src: FARM_PHOTOS.visitorSelfie,
+    alt: "Group of guests at the farm",
+    label: "Guests & gatherings",
+    h: "tall",
+  },
+  {
     src: "https://images.pexels.com/photos/5078745/pexels-photo-5078745.jpeg?auto=compress&cs=tinysrgb&w=1400",
     alt: "Sunrise over rural farm and farmhouse",
-    label: "Farm landscapes",
+    label: "Sunrise on the farm",
     h: "tall",
   },
   {

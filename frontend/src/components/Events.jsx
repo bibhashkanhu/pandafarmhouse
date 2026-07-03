@@ -2,11 +2,10 @@ import React from "react";
 import { motion } from "framer-motion";
 import { PartyPopper, Cake, Users2, Utensils, ArrowRight, Sparkles } from "lucide-react";
 import { FARM } from "@/constants/testIds";
+import { FARM_PHOTOS } from "@/constants/farmPhotos";
 
-const EVENT_IMG =
-  "https://images.unsplash.com/photo-1519671482749-fd09be7ccebf?auto=format&fit=crop&w=1600&q=80";
-const EVENT_IMG_2 =
-  "https://images.unsplash.com/photo-1467810563316-b5476525c0f9?auto=format&fit=crop&w=1200&q=80";
+const EVENT_IMG = FARM_PHOTOS.visitorGroup;
+const EVENT_IMG_2 = FARM_PHOTOS.visitorSelfie;
 
 const events = [
   {
@@ -107,7 +106,7 @@ const Events = () => (
           <div className="relative rounded-3xl overflow-hidden shadow-2xl">
             <img
               src={EVENT_IMG}
-              alt="Long farm table dinner set under fairy lights at Panda Farm House"
+              alt="Visitors gathered together at Panda Farm House during a farm day-out"
               loading="lazy"
               className="w-full h-[420px] md:h-[520px] object-cover"
             />
@@ -117,7 +116,7 @@ const Events = () => (
           <div className="hidden md:block absolute -bottom-8 -left-8 w-52 rounded-2xl overflow-hidden border-4 border-[#1A2E1A] shadow-2xl">
             <img
               src={EVENT_IMG_2}
-              alt="Bonfire and cozy gathering at the farm"
+              alt="Happy group of guests at the farm"
               loading="lazy"
               className="w-full h-40 object-cover"
             />

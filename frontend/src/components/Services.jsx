@@ -2,6 +2,7 @@ import React from "react";
 import { motion } from "framer-motion";
 import { Fish, Sprout, Egg, Trees } from "lucide-react";
 import { FARM } from "@/constants/testIds";
+import { FARM_PHOTOS } from "@/constants/farmPhotos";
 
 const services = [
   {
@@ -11,8 +12,8 @@ const services = [
     tagline: "Freshwater · Clean Water Ponds",
     desc: "Healthy, hormone-free freshwater fish reared in oxygen-rich ponds. Rohu, Katla, Mrigal and more — netted fresh on order.",
     icon: Fish,
-    img: "https://images.unsplash.com/photo-1541441056316-443fff347c40?auto=format&fit=crop&w=1400&q=80",
-    tone: "from-[#0f5b8a]/70 to-[#0b2e4a]/80",
+    img: FARM_PHOTOS.fishHarvest,
+    tone: "from-[#0f5b8a]/60 to-[#0b2e4a]/80",
   },
   {
     id: "vegetables",

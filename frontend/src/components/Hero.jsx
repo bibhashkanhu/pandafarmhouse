@@ -1,9 +1,9 @@
 import React, { useEffect, useRef } from "react";
 import { ArrowRight, MapPin } from "lucide-react";
 import { FARM } from "@/constants/testIds";
+import { FARM_PHOTOS } from "@/constants/farmPhotos";
 
-const HERO_BG =
-  "https://images.unsplash.com/photo-1721292175149-8a929b7635f7?auto=format&fit=crop&w=2400&q=80";
+const HERO_BG = FARM_PHOTOS.farmFieldsWaterTank;
 
 const Hero = () => {
   const bgRef = useRef(null);
