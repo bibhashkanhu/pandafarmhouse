@@ -51,6 +51,38 @@ class ContactSubmission(BaseModel):
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
+class BookingCreate(BaseModel):
+    name: str = Field(..., min_length=1, max_length=120)
+    email: EmailStr
+    phone: str = Field(..., min_length=5, max_length=30)
+    event_date: str = Field(..., min_length=1, max_length=40)     # YYYY-MM-DD
+    start_time: str = Field(..., min_length=1, max_length=20)     # HH:MM
+    duration_hours: Optional[str] = Field(default="", max_length=10)
+    members: int = Field(..., ge=1, le=1000)
+    occasion: Optional[str] = Field(default="")
+    decoration_note: Optional[str] = Field(default="", max_length=2000)
+    add_ons: List[str] = Field(default_factory=list)
+    notes: Optional[str] = Field(default="", max_length=2000)
+
+
+class Booking(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    name: str
+    email: EmailStr
+    phone: str
+    event_date: str
+    start_time: str
+    duration_hours: str = ""
+    members: int
+    occasion: str = ""
+    decoration_note: str = ""
+    add_ons: List[str] = Field(default_factory=list)
+    notes: str = ""
+    email_sent: bool = False
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
 # ---------- Helpers ----------
 def _build_email_html(sub: ContactSubmission) -> str:
     label = {
@@ -157,6 +189,95 @@ async def create_contact_submission(payload: ContactSubmissionCreate):
 @api_router.get("/contact", response_model=List[ContactSubmission])
 async def list_contact_submissions(limit: int = 100):
     items = await db.contact_submissions.find({}, {"_id": 0}).sort("created_at", -1).to_list(limit)
+    for it in items:
+        if isinstance(it.get("created_at"), str):
+            try:
+                it["created_at"] = datetime.fromisoformat(it["created_at"])
+            except Exception:
+                pass
+    return items
+
+
+def _build_booking_html(b: Booking) -> str:
+    addons = "".join(
+        f"<li style='margin:4px 0;'>&#10003; {a}</li>" for a in b.add_ons
+    ) or "<li style='margin:4px 0; color:#6D4C41;'>None selected</li>"
+    return f"""
+    <table width="100%" cellpadding="0" cellspacing="0" style="font-family: Arial, Helvetica, sans-serif; background:#FDFBF7; padding:24px;">
+      <tr><td>
+        <table width="100%" style="max-width:680px; margin:0 auto; background:#ffffff; border:1px solid #E5E0D8; border-radius:12px; overflow:hidden;">
+          <tr>
+            <td style="background:#1A2E1A; padding:24px; color:#fff;">
+              <div style="font-size:12px; letter-spacing:3px; color:#FBC02D;">PANDA FARM HOUSE</div>
+              <div style="font-size:22px; margin-top:6px;">New Farm Booking Request</div>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:24px; color:#1A2E1A;">
+              <h3 style="margin:0 0 12px 0; color:#2E7D32; font-size:14px; letter-spacing:2px; text-transform:uppercase;">Guest</h3>
+              <p style="margin:0 0 6px 0;"><strong>Name:</strong> {b.name}</p>
+              <p style="margin:0 0 6px 0;"><strong>Email:</strong> {b.email}</p>
+              <p style="margin:0 0 6px 0;"><strong>Phone:</strong> {b.phone}</p>
+
+              <h3 style="margin:20px 0 12px 0; color:#2E7D32; font-size:14px; letter-spacing:2px; text-transform:uppercase;">Event</h3>
+              <p style="margin:0 0 6px 0;"><strong>Occasion:</strong> {b.occasion or 'Not specified'}</p>
+              <p style="margin:0 0 6px 0;"><strong>Date:</strong> {b.event_date}</p>
+              <p style="margin:0 0 6px 0;"><strong>Start Time:</strong> {b.start_time}</p>
+              <p style="margin:0 0 6px 0;"><strong>Estimated Duration:</strong> {b.duration_hours or 'To be confirmed'} hrs</p>
+              <p style="margin:0 0 6px 0;"><strong>Total Members:</strong> {b.members}</p>
+
+              <h3 style="margin:20px 0 12px 0; color:#2E7D32; font-size:14px; letter-spacing:2px; text-transform:uppercase;">Add-ons Requested</h3>
+              <ul style="margin:0; padding-left:18px;">{addons}</ul>
+
+              <h3 style="margin:20px 0 12px 0; color:#2E7D32; font-size:14px; letter-spacing:2px; text-transform:uppercase;">Decoration Notes</h3>
+              <p style="margin:0; padding:12px; background:#F4F1EA; border-left:4px solid #FBC02D; border-radius:6px; white-space:pre-wrap;">
+                {b.decoration_note or 'No specific decoration request.'}
+              </p>
+
+              <h3 style="margin:20px 0 12px 0; color:#2E7D32; font-size:14px; letter-spacing:2px; text-transform:uppercase;">Additional Notes</h3>
+              <p style="margin:0; padding:12px; background:#F4F1EA; border-left:4px solid #2E7D32; border-radius:6px; white-space:pre-wrap;">
+                {b.notes or '—'}
+              </p>
+
+              <p style="margin:24px 0 0 0; font-size:12px; color:#6D4C41;">
+                Received on {b.created_at.strftime('%d %b %Y, %I:%M %p UTC')} · Booking ID: {b.id}
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td style="background:#F4F1EA; padding:16px; text-align:center; font-size:12px; color:#6D4C41;">
+              Panda Farm House &middot; Banaparia, Balasore, Odisha 756056 &middot; +91 98614 48443
+            </td>
+          </tr>
+        </table>
+      </td></tr>
+    </table>
+    """
+
+
+@api_router.post("/booking", response_model=Booking)
+async def create_booking(payload: BookingCreate):
+    booking = Booking(**payload.model_dump())
+
+    subject = f"[Panda Farm House] Booking Request — {booking.name} on {booking.event_date}"
+    email_ok = await _send_email(
+        to=CONTACT_RECIPIENT_EMAIL,
+        subject=subject,
+        html=_build_booking_html(booking),
+        reply_to=booking.email,
+    )
+    booking.email_sent = email_ok
+
+    doc = booking.model_dump()
+    doc["created_at"] = doc["created_at"].isoformat()
+    await db.bookings.insert_one(doc)
+
+    return booking
+
+
+@api_router.get("/booking", response_model=List[Booking])
+async def list_bookings(limit: int = 100):
+    items = await db.bookings.find({}, {"_id": 0}).sort("created_at", -1).to_list(limit)
     for it in items:
         if isinstance(it.get("created_at"), str):
             try:

@@ -1,0 +1,422 @@
+import React, { useMemo, useState } from "react";
+import axios from "axios";
+import { toast } from "sonner";
+import {
+  CalendarDays,
+  Clock,
+  Users,
+  Sparkles,
+  Send,
+  ArrowRight,
+  MessageCircle,
+  X,
+  ShieldCheck,
+  Phone,
+  Mail,
+  Utensils,
+  Flame,
+  Music4,
+  Cake,
+  Camera,
+  Trees,
+  Sparkle,
+  Check,
+} from "lucide-react";
+
+const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
+const WHATSAPP_NUMBER = "918328830796";
+
+const OCCASIONS = [
+  "Year-End Feast",
+  "Family Get-Together",
+  "Birthday Celebration",
+  "Anniversary",
+  "Corporate Off-site",
+  "Baby Shower",
+  "Other Small Event",
+];
+
+const ADD_ONS = [
+  { id: "meals",       label: "Farm-fresh Meals",        icon: Utensils },
+  { id: "bonfire",     label: "Bonfire Setup",           icon: Flame },
+  { id: "dj",          label: "DJ / Sound System",       icon: Music4 },
+  { id: "cake",        label: "Cake Arrangement",        icon: Cake },
+  { id: "photography", label: "Photography",             icon: Camera },
+  { id: "decor",       label: "Traditional Decor",       icon: Sparkles },
+  { id: "sparklers",   label: "Sparklers / Fireworks",   icon: Sparkle },
+  { id: "farmtour",    label: "Guided Farm Tour",        icon: Trees },
+];
+
+const emptyForm = {
+  name: "",
+  email: "",
+  phone: "",
+  event_date: "",
+  start_time: "",
+  duration_hours: "",
+  members: "",
+  occasion: "",
+  decoration_note: "",
+  add_ons: [],
+  notes: "",
+};
+
+const buildWhatsAppText = (f) => {
+  const lines = [
+    "*Panda Farm House — Booking Request*",
+    "",
+    `*Name:* ${f.name}`,
+    `*Phone:* ${f.phone}`,
+    `*Email:* ${f.email}`,
+    "",
+    `*Occasion:* ${f.occasion || "Not specified"}`,
+    `*Date:* ${f.event_date}`,
+    `*Start Time:* ${f.start_time}`,
+    `*Duration:* ${f.duration_hours ? `${f.duration_hours} hrs` : "TBD"}`,
+    `*Total Members:* ${f.members}`,
+    "",
+    `*Add-ons:* ${f.add_ons.length ? f.add_ons.join(", ") : "None"}`,
+    "",
+    `*Decoration:* ${f.decoration_note || "—"}`,
+    `*Notes:* ${f.notes || "—"}`,
+    "",
+    "Please call me back to discuss pricing & confirm.",
+  ];
+  return encodeURIComponent(lines.join("\n"));
+};
+
+const BookingDialog = ({ open, onClose }) => {
+  const [form, setForm] = useState(emptyForm);
+  const [loading, setLoading] = useState(false);
+
+  const update = (k) => (e) =>
+    setForm((f) => ({ ...f, [k]: e.target.value }));
+
+  const toggleAddon = (label) =>
+    setForm((f) => ({
+      ...f,
+      add_ons: f.add_ons.includes(label)
+        ? f.add_ons.filter((x) => x !== label)
+        : [...f.add_ons, label],
+    }));
+
+  const today = useMemo(() => new Date().toISOString().split("T")[0], []);
+
+  const validate = () => {
+    if (!form.name.trim()) return "Please enter your name.";
+    if (!form.email.trim()) return "Please enter your email.";
+    if (!form.phone.trim()) return "Please enter your phone number.";
+    if (!form.event_date) return "Please pick an event date.";
+    if (!form.start_time) return "Please pick a start time.";
+    if (!form.members || Number(form.members) < 1) return "Please enter total members.";
+    return null;
+  };
+
+  const submit = async () => {
+    const err = validate();
+    if (err) {
+      toast.error(err);
+      return;
+    }
+    setLoading(true);
+    try {
+      const payload = {
+        ...form,
+        members: Number(form.members),
+        occasion: form.occasion || "Not specified",
+      };
+      const res = await axios.post(`${API}/booking`, payload);
+      if (res.data?.id) {
+        // Open WhatsApp with prefilled details in a new tab
+        const waUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${buildWhatsAppText(payload)}`;
+        window.open(waUrl, "_blank", "noopener");
+        toast.success("Booking sent! Our team will call you shortly to confirm.");
+        setForm(emptyForm);
+        onClose();
+      }
+    } catch (e) {
+      toast.error("Something went wrong. Please try again or WhatsApp us.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (!open) return null;
+
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      data-testid="booking-dialog"
+      className="fixed inset-0 z-[80] flex items-start md:items-center justify-center p-3 md:p-6 bg-[#1A2E1A]/85 backdrop-blur-md overflow-y-auto"
+      onMouseDown={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <div className="w-full max-w-3xl bg-[#FDFBF7] rounded-3xl shadow-2xl border border-[#E5E0D8] overflow-hidden my-8">
+        {/* Header */}
+        <div className="relative bg-[#1A2E1A] text-white px-6 md:px-10 py-8">
+          <div className="absolute inset-0 grain-overlay opacity-40" />
+          <div className="absolute -top-12 -right-12 h-40 w-40 rounded-full bg-[#FBC02D]/20 blur-3xl" />
+          <button
+            data-testid="booking-dialog-close"
+            aria-label="Close"
+            onClick={onClose}
+            className="absolute top-4 right-4 h-10 w-10 grid place-items-center rounded-full bg-white/10 hover:bg-white/20 transition-colors z-10"
+          >
+            <X className="h-4 w-4" />
+          </button>
+          <div className="relative">
+            <div className="inline-flex items-center gap-2 rounded-full border border-[#FBC02D]/40 bg-[#FBC02D]/10 px-3 py-1 text-[10px] uppercase tracking-[0.28em] text-[#FBC02D]">
+              <Sparkles className="h-3 w-3" /> Book the Farmhouse
+            </div>
+            <h3 className="mt-4 font-serif-display text-3xl md:text-4xl leading-tight tracking-tight">
+              Book an Appointment
+            </h3>
+            <p className="mt-2 text-sm text-white/70 max-w-xl">
+              Tell us about your day — our team will call you back within 24
+              hours to confirm availability and finalise pricing.
+            </p>
+          </div>
+        </div>
+
+        {/* Body */}
+        <div className="px-6 md:px-10 py-8 space-y-8">
+          {/* Personal */}
+          <section>
+            <div className="text-[10px] uppercase tracking-[0.28em] text-[#2E7D32] mb-4">
+              Your Details
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Field label="Full Name">
+                <input
+                  data-testid="booking-input-name"
+                  type="text"
+                  value={form.name}
+                  onChange={update("name")}
+                  placeholder="Your full name"
+                  className={inputCls}
+                />
+              </Field>
+              <Field label="Phone">
+                <div className="relative">
+                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#6D4C41]/60" />
+                  <input
+                    data-testid="booking-input-phone"
+                    type="tel"
+                    value={form.phone}
+                    onChange={update("phone")}
+                    placeholder="+91 98•• •• ••••"
+                    className={`${inputCls} pl-10`}
+                  />
+                </div>
+              </Field>
+              <Field label="Email" className="md:col-span-2">
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#6D4C41]/60" />
+                  <input
+                    data-testid="booking-input-email"
+                    type="email"
+                    value={form.email}
+                    onChange={update("email")}
+                    placeholder="you@example.com"
+                    className={`${inputCls} pl-10`}
+                  />
+                </div>
+              </Field>
+            </div>
+          </section>
+
+          {/* Event details */}
+          <section>
+            <div className="text-[10px] uppercase tracking-[0.28em] text-[#2E7D32] mb-4">
+              Event Details
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Field label="Occasion">
+                <select
+                  data-testid="booking-input-occasion"
+                  value={form.occasion}
+                  onChange={update("occasion")}
+                  className={inputCls}
+                >
+                  <option value="">Select an occasion</option>
+                  {OCCASIONS.map((o) => (
+                    <option key={o} value={o}>{o}</option>
+                  ))}
+                </select>
+              </Field>
+              <Field label="Total Members">
+                <div className="relative">
+                  <Users className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#6D4C41]/60" />
+                  <input
+                    data-testid="booking-input-members"
+                    type="number"
+                    min={1}
+                    value={form.members}
+                    onChange={update("members")}
+                    placeholder="e.g. 20"
+                    className={`${inputCls} pl-10`}
+                  />
+                </div>
+              </Field>
+              <Field label="Event Date">
+                <div className="relative">
+                  <CalendarDays className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#6D4C41]/60 pointer-events-none" />
+                  <input
+                    data-testid="booking-input-date"
+                    type="date"
+                    min={today}
+                    value={form.event_date}
+                    onChange={update("event_date")}
+                    className={`${inputCls} pl-10`}
+                  />
+                </div>
+              </Field>
+              <Field label="Start Time">
+                <div className="relative">
+                  <Clock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#6D4C41]/60 pointer-events-none" />
+                  <input
+                    data-testid="booking-input-time"
+                    type="time"
+                    value={form.start_time}
+                    onChange={update("start_time")}
+                    className={`${inputCls} pl-10`}
+                  />
+                </div>
+              </Field>
+              <Field label="Estimated Duration (hours)" className="md:col-span-2">
+                <input
+                  data-testid="booking-input-duration"
+                  type="number"
+                  min={1}
+                  max={24}
+                  value={form.duration_hours}
+                  onChange={update("duration_hours")}
+                  placeholder="e.g. 4"
+                  className={inputCls}
+                />
+              </Field>
+            </div>
+          </section>
+
+          {/* Add-ons */}
+          <section>
+            <div className="text-[10px] uppercase tracking-[0.28em] text-[#2E7D32] mb-4">
+              Add-ons (arranged on the day of your event)
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {ADD_ONS.map(({ id, label, icon: Icon }) => {
+                const active = form.add_ons.includes(label);
+                return (
+                  <button
+                    key={id}
+                    type="button"
+                    data-testid={`booking-addon-${id}`}
+                    onClick={() => toggleAddon(label)}
+                    className={`flex items-center gap-3 text-left rounded-xl border px-4 py-3 transition-all ${
+                      active
+                        ? "border-[#2E7D32] bg-[#2E7D32]/5 text-[#1A2E1A] shadow-sm"
+                        : "border-[#E5E0D8] bg-white text-[#1A2E1A] hover:border-[#2E7D32]/40"
+                    }`}
+                  >
+                    <span
+                      className={`h-9 w-9 grid place-items-center rounded-lg transition-colors ${
+                        active ? "bg-[#2E7D32] text-white" : "bg-[#F4F1EA] text-[#2E7D32]"
+                      }`}
+                    >
+                      <Icon className="h-4 w-4" />
+                    </span>
+                    <span className="text-sm flex-1">{label}</span>
+                    <span
+                      className={`h-5 w-5 grid place-items-center rounded border ${
+                        active
+                          ? "bg-[#2E7D32] border-[#2E7D32] text-white"
+                          : "border-[#E5E0D8] bg-white"
+                      }`}
+                    >
+                      {active && <Check className="h-3 w-3" />}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </section>
+
+          {/* Notes */}
+          <section className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Field label="Decoration you'd like us to arrange">
+              <textarea
+                data-testid="booking-input-decoration"
+                value={form.decoration_note}
+                onChange={update("decoration_note")}
+                rows={4}
+                placeholder="Colour theme, flower arrangements, seating style, banners…"
+                className={`${inputCls} resize-none`}
+              />
+            </Field>
+            <Field label="Anything else we should know?">
+              <textarea
+                data-testid="booking-input-notes"
+                value={form.notes}
+                onChange={update("notes")}
+                rows={4}
+                placeholder="Dietary preferences, elderly guests, special songs, arrival plan…"
+                className={`${inputCls} resize-none`}
+              />
+            </Field>
+          </section>
+
+          {/* Trust strip */}
+          <div className="rounded-2xl bg-[#F4F1EA] border border-[#E5E0D8] p-5 flex items-start gap-3">
+            <ShieldCheck className="h-5 w-5 text-[#2E7D32] mt-0.5 shrink-0" />
+            <p className="text-sm text-[#6D4C41] leading-relaxed">
+              Submitting this form does <strong className="text-[#1A2E1A]">not</strong> confirm your booking. Our team will
+              call you within 24 hours to check availability, walk through your
+              add-ons, and finalise a price. Booking starts from
+              <strong className="text-[#1A2E1A]"> ₹1,499/hr</strong> — terms &amp; conditions apply.
+            </p>
+          </div>
+
+          {/* Actions */}
+          <div className="flex flex-col sm:flex-row gap-3 pt-2">
+            <button
+              type="button"
+              data-testid="booking-submit"
+              disabled={loading}
+              onClick={submit}
+              className="group flex-1 inline-flex items-center justify-center gap-2 bg-[#2E7D32] hover:bg-[#1A2E1A] disabled:opacity-60 disabled:cursor-not-allowed text-white px-6 py-4 rounded-full font-medium tracking-wide transition-colors shadow-lg"
+            >
+              <Send className="h-4 w-4" />
+              {loading ? "Sending…" : "Submit & Continue on WhatsApp"}
+              <ArrowRight className="h-4 w-4 group-hover:translate-x-0.5 transition-transform" />
+            </button>
+            <a
+              data-testid="booking-whatsapp-direct"
+              href={`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(
+                "Hi Panda Farm House, I'd like to book the farm for an event."
+              )}`}
+              target="_blank"
+              rel="noreferrer"
+              className="sm:w-56 inline-flex items-center justify-center gap-2 bg-[#25D366] hover:bg-[#128C7E] text-white px-6 py-4 rounded-full font-medium tracking-wide transition-colors"
+            >
+              <MessageCircle className="h-4 w-4" /> Chat First
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const inputCls =
+  "w-full bg-white border border-[#E5E0D8] focus:border-[#2E7D32] focus:ring-2 focus:ring-[#2E7D32]/15 rounded-xl px-4 py-3 outline-none transition-all text-[#1A2E1A] placeholder:text-[#6D4C41]/50";
+
+const Field = ({ label, className = "", children }) => (
+  <label className={`block ${className}`}>
+    <span className="text-xs uppercase tracking-[0.24em] text-[#6D4C41]">{label}</span>
+    <div className="mt-2">{children}</div>
+  </label>
+);
+
+export default BookingDialog;
