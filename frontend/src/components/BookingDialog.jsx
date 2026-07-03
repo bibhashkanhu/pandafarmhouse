@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import axios from "axios";
 import { toast } from "sonner";
 import {
@@ -88,6 +88,24 @@ const buildWhatsAppText = (f) => {
 const BookingDialog = ({ open, onClose }) => {
   const [form, setForm] = useState(emptyForm);
   const [loading, setLoading] = useState(false);
+  const scrollRef = useRef(null);
+  const refs = {
+    name: useRef(null),
+    email: useRef(null),
+    phone: useRef(null),
+    event_date: useRef(null),
+    start_time: useRef(null),
+    members: useRef(null),
+  };
+
+  // When dialog opens, scroll to top so the first fields (name/email/phone) are visible.
+  useEffect(() => {
+    if (open && scrollRef.current) {
+      scrollRef.current.scrollTop = 0;
+      // Focus the name field so users see exactly where to type.
+      setTimeout(() => refs.name.current?.focus(), 60);
+    }
+  }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const update = (k) => (e) =>
     setForm((f) => ({ ...f, [k]: e.target.value }));
@@ -103,19 +121,34 @@ const BookingDialog = ({ open, onClose }) => {
   const today = useMemo(() => new Date().toISOString().split("T")[0], []);
 
   const validate = () => {
-    if (!form.name.trim()) return "Please enter your name.";
-    if (!form.email.trim()) return "Please enter your email.";
-    if (!form.phone.trim()) return "Please enter your phone number.";
-    if (!form.event_date) return "Please pick an event date.";
-    if (!form.start_time) return "Please pick a start time.";
-    if (!form.members || Number(form.members) < 1) return "Please enter total members.";
+    if (!form.name.trim())   return { msg: "Please enter your name.",   field: "name" };
+    if (!form.email.trim())  return { msg: "Please enter your email.",  field: "email" };
+    if (!form.phone.trim())  return { msg: "Please enter your phone number.", field: "phone" };
+    if (!form.event_date)    return { msg: "Please pick an event date.", field: "event_date" };
+    if (!form.start_time)    return { msg: "Please pick a start time.",  field: "start_time" };
+    if (!form.members || Number(form.members) < 1)
+      return { msg: "Please enter total members.", field: "members" };
     return null;
+  };
+
+  const focusField = (field) => {
+    const el = refs[field]?.current;
+    if (!el) return;
+    // Scroll the dialog container so the field is comfortably visible near the top.
+    const container = scrollRef.current;
+    if (container) {
+      const elTop = el.getBoundingClientRect().top;
+      const cTop = container.getBoundingClientRect().top;
+      container.scrollTop += (elTop - cTop) - 120;
+    }
+    setTimeout(() => el.focus({ preventScroll: true }), 80);
   };
 
   const submit = async () => {
     const err = validate();
     if (err) {
-      toast.error(err);
+      toast.error(err.msg);
+      focusField(err.field);
       return;
     }
     setLoading(true);
@@ -148,7 +181,8 @@ const BookingDialog = ({ open, onClose }) => {
       role="dialog"
       aria-modal="true"
       data-testid="booking-dialog"
-      className="fixed inset-0 z-[80] flex items-start md:items-center justify-center p-3 md:p-6 bg-[#1A2E1A]/85 backdrop-blur-md overflow-y-auto"
+      ref={scrollRef}
+      className="fixed inset-0 z-[80] flex items-start justify-center p-3 md:p-6 md:pt-10 bg-[#1A2E1A]/85 backdrop-blur-md overflow-y-auto"
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
@@ -191,6 +225,7 @@ const BookingDialog = ({ open, onClose }) => {
               <Field label="Full Name">
                 <input
                   data-testid="booking-input-name"
+                  ref={refs.name}
                   type="text"
                   value={form.name}
                   onChange={update("name")}
@@ -203,6 +238,7 @@ const BookingDialog = ({ open, onClose }) => {
                   <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#6D4C41]/60" />
                   <input
                     data-testid="booking-input-phone"
+                    ref={refs.phone}
                     type="tel"
                     value={form.phone}
                     onChange={update("phone")}
@@ -216,6 +252,7 @@ const BookingDialog = ({ open, onClose }) => {
                   <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#6D4C41]/60" />
                   <input
                     data-testid="booking-input-email"
+                    ref={refs.email}
                     type="email"
                     value={form.email}
                     onChange={update("email")}
@@ -251,6 +288,7 @@ const BookingDialog = ({ open, onClose }) => {
                   <Users className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#6D4C41]/60" />
                   <input
                     data-testid="booking-input-members"
+                    ref={refs.members}
                     type="number"
                     min={1}
                     value={form.members}
@@ -265,6 +303,7 @@ const BookingDialog = ({ open, onClose }) => {
                   <CalendarDays className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#6D4C41]/60 pointer-events-none" />
                   <input
                     data-testid="booking-input-date"
+                    ref={refs.event_date}
                     type="date"
                     min={today}
                     value={form.event_date}
@@ -278,6 +317,7 @@ const BookingDialog = ({ open, onClose }) => {
                   <Clock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#6D4C41]/60 pointer-events-none" />
                   <input
                     data-testid="booking-input-time"
+                    ref={refs.start_time}
                     type="time"
                     value={form.start_time}
                     onChange={update("start_time")}
