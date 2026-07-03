@@ -173,7 +173,6 @@ const BookingDialog = ({ open, onClose }) => {
       };
       const res = await axios.post(`${API}/booking`, payload);
       if (res.data?.id) {
-        toast.success("Booking sent! Check your email for confirmation.");
         setSuccess({ ...payload, id: res.data.id });
         setForm(emptyForm);
         if (scrollRef.current) scrollRef.current.scrollTop = 0;
