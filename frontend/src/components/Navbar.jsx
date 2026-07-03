@@ -8,6 +8,7 @@ const links = [
   { id: "about", label: "About", testid: FARM.navLinkAbout },
   { id: "services", label: "Services", testid: FARM.navLinkServices },
   { id: "gallery", label: "Gallery", testid: FARM.navLinkGallery },
+  { id: "events", label: "Events", testid: "nav-link-events" },
   { id: "visit", label: "Visit", testid: FARM.navLinkVisit },
   { id: "contact", label: "Contact", testid: FARM.navLinkContact },
 ];

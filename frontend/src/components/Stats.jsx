@@ -3,13 +3,13 @@ import { motion, useInView } from "framer-motion";
 import { FARM } from "@/constants/testIds";
 
 const stats = [
-  { value: 500, suffix: "+", label: "Happy Customers" },
-  { value: 20,  suffix: "+", label: "Acres of Farming" },
-  { value: 100, suffix: "%", label: "Organic Practices" },
-  { value: 10,  suffix: "+", label: "Years of Experience" },
+  { value: 500, suffix: "+", label: "Happy Customers", decimals: 0 },
+  { value: 4.5, suffix: "+", label: "Acres of Farming", decimals: 1 },
+  { value: 100, suffix: "%", label: "Organic Practices", decimals: 0 },
+  { value: 10,  suffix: "+", label: "Years of Experience", decimals: 0 },
 ];
 
-const Counter = ({ value, suffix, active }) => {
+const Counter = ({ value, suffix, decimals = 0, active }) => {
   const [n, setN] = useState(0);
 
   useEffect(() => {
@@ -19,18 +19,19 @@ const Counter = ({ value, suffix, active }) => {
     const duration = 1600;
     const tick = (t) => {
       const p = Math.min(1, (t - start) / duration);
-      // easeOutCubic
       const eased = 1 - Math.pow(1 - p, 3);
-      setN(Math.round(value * eased));
+      const current = value * eased;
+      setN(decimals > 0 ? Number(current.toFixed(decimals)) : Math.round(current));
       if (p < 1) raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, [active, value]);
+  }, [active, value, decimals]);
 
+  const display = decimals > 0 ? n.toFixed(decimals) : n;
   return (
     <span className="font-serif-display text-6xl md:text-7xl lg:text-8xl text-gradient-forest tracking-tight">
-      {n}
+      {display}
       {suffix}
     </span>
   );
@@ -66,7 +67,7 @@ const Stats = () => {
               transition={{ duration: 0.6, delay: i * 0.08 }}
               className="rounded-2xl bg-white/70 backdrop-blur-md border border-white/60 p-6 md:p-8"
             >
-              <Counter value={s.value} suffix={s.suffix} active={inView} />
+              <Counter value={s.value} suffix={s.suffix} decimals={s.decimals} active={inView} />
               <div className="mt-3 text-xs md:text-sm uppercase tracking-[0.28em] text-[#6D4C41]">
                 {s.label}
               </div>

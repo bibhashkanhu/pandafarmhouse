@@ -8,6 +8,7 @@ import Gallery from "@/components/Gallery";
 import Reviews from "@/components/Reviews";
 import Process from "@/components/Process";
 import Stats from "@/components/Stats";
+import Events from "@/components/Events";
 import Visit from "@/components/Visit";
 import ContactForm from "@/components/ContactForm";
 import Footer from "@/components/Footer";
@@ -26,6 +27,7 @@ const LandingPage = () => {
         <Reviews />
         <Process />
         <Stats />
+        <Events />
         <Visit />
         <ContactForm />
       </main>

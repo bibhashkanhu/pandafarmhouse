@@ -91,7 +91,7 @@ const Hero = () => {
         <div className="mt-14 md:mt-20 grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-10">
           {[
             ["10+", "Years of care"],
-            ["20+", "Acres of land"],
+            ["4.5+", "Acres of land"],
             ["4", "Farming verticals"],
             ["4.8", "Google rating"],
           ].map(([k, v]) => (
