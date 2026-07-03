@@ -61,6 +61,9 @@ const emptyForm = {
   notes: "",
 };
 
+// Simple client-side email format check to catch typos before hitting server.
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+
 const buildWhatsAppText = (f) => {
   const lines = [
     "*Panda Farm House — Booking Request*",
@@ -88,6 +91,7 @@ const buildWhatsAppText = (f) => {
 const BookingDialog = ({ open, onClose }) => {
   const [form, setForm] = useState(emptyForm);
   const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(null); // holds submitted booking on success
   const scrollRef = useRef(null);
   const refs = {
     name: useRef(null),
@@ -102,10 +106,15 @@ const BookingDialog = ({ open, onClose }) => {
   useEffect(() => {
     if (open && scrollRef.current) {
       scrollRef.current.scrollTop = 0;
-      // Focus the name field so users see exactly where to type.
-      setTimeout(() => refs.name.current?.focus(), 60);
+      if (!success) setTimeout(() => refs.name.current?.focus(), 60);
     }
-  }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [open, success]); // deps intentional
+
+  const handleClose = () => {
+    onClose();
+    // Reset success state a little after close so the animation stays clean.
+    setTimeout(() => setSuccess(null), 300);
+  };
 
   const update = (k) => (e) =>
     setForm((f) => ({ ...f, [k]: e.target.value }));
@@ -123,7 +132,11 @@ const BookingDialog = ({ open, onClose }) => {
   const validate = () => {
     if (!form.name.trim())   return { msg: "Please enter your name.",   field: "name" };
     if (!form.email.trim())  return { msg: "Please enter your email.",  field: "email" };
+    if (!EMAIL_RE.test(form.email.trim()))
+      return { msg: "Please enter a valid email (e.g. name@example.com).", field: "email" };
     if (!form.phone.trim())  return { msg: "Please enter your phone number.", field: "phone" };
+    if (form.phone.replace(/\D/g, "").length < 7)
+      return { msg: "Please enter a valid phone number.", field: "phone" };
     if (!form.event_date)    return { msg: "Please pick an event date.", field: "event_date" };
     if (!form.start_time)    return { msg: "Please pick a start time.",  field: "start_time" };
     if (!form.members || Number(form.members) < 1)
@@ -160,15 +173,24 @@ const BookingDialog = ({ open, onClose }) => {
       };
       const res = await axios.post(`${API}/booking`, payload);
       if (res.data?.id) {
-        // Open WhatsApp with prefilled details in a new tab
-        const waUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${buildWhatsAppText(payload)}`;
-        window.open(waUrl, "_blank", "noopener");
-        toast.success("Booking sent! Our team will call you shortly to confirm.");
+        toast.success("Booking sent! Check your email for confirmation.");
+        setSuccess({ ...payload, id: res.data.id });
         setForm(emptyForm);
-        onClose();
+        if (scrollRef.current) scrollRef.current.scrollTop = 0;
       }
     } catch (e) {
-      toast.error("Something went wrong. Please try again or WhatsApp us.");
+      const detail = e?.response?.data?.detail;
+      let msg = "Something went wrong. Please try again or WhatsApp us.";
+      if (Array.isArray(detail) && detail.length) {
+        const first = detail[0];
+        const field = (first.loc || []).slice(-1)[0];
+        msg = field
+          ? `Please check the "${field}" field: ${first.msg || "invalid value"}.`
+          : first.msg || msg;
+      } else if (typeof detail === "string") {
+        msg = detail;
+      }
+      toast.error(msg);
     } finally {
       setLoading(false);
     }
@@ -184,10 +206,14 @@ const BookingDialog = ({ open, onClose }) => {
       ref={scrollRef}
       className="fixed inset-0 z-[80] flex items-start justify-center p-3 md:p-6 md:pt-10 bg-[#1A2E1A]/85 backdrop-blur-md overflow-y-auto"
       onMouseDown={(e) => {
-        if (e.target === e.currentTarget) onClose();
+        if (e.target === e.currentTarget) handleClose();
       }}
     >
       <div className="w-full max-w-3xl bg-[#FDFBF7] rounded-3xl shadow-2xl border border-[#E5E0D8] overflow-hidden my-8">
+        {success ? (
+          <SuccessScreen data={success} onClose={handleClose} />
+        ) : (
+        <>
         {/* Header */}
         <div className="relative bg-[#1A2E1A] text-white px-6 md:px-10 py-8">
           <div className="absolute inset-0 grain-overlay opacity-40" />
@@ -195,7 +221,7 @@ const BookingDialog = ({ open, onClose }) => {
           <button
             data-testid="booking-dialog-close"
             aria-label="Close"
-            onClick={onClose}
+            onClick={handleClose}
             className="absolute top-4 right-4 h-10 w-10 grid place-items-center rounded-full bg-white/10 hover:bg-white/20 transition-colors z-10"
           >
             <X className="h-4 w-4" />
@@ -428,7 +454,7 @@ const BookingDialog = ({ open, onClose }) => {
               className="group flex-1 inline-flex items-center justify-center gap-2 bg-[#2E7D32] hover:bg-[#1A2E1A] disabled:opacity-60 disabled:cursor-not-allowed text-white px-6 py-4 rounded-full font-medium tracking-wide transition-colors shadow-lg"
             >
               <Send className="h-4 w-4" />
-              {loading ? "Sending…" : "Submit & Continue on WhatsApp"}
+              {loading ? "Sending…" : "Submit Booking Enquiry"}
               <ArrowRight className="h-4 w-4 group-hover:translate-x-0.5 transition-transform" />
             </button>
             <a
@@ -444,10 +470,116 @@ const BookingDialog = ({ open, onClose }) => {
             </a>
           </div>
         </div>
+        </>
+        )}
       </div>
     </div>
   );
 };
+
+const SuccessScreen = ({ data, onClose }) => {
+  const waHref =
+    `https://wa.me/${WHATSAPP_NUMBER}?text=${buildWhatsAppText(data)}`;
+  const first = (data.name || "there").split(" ")[0];
+  return (
+    <div data-testid="booking-success" className="relative">
+      <div className="relative bg-[#1A2E1A] text-white px-6 md:px-10 py-10 overflow-hidden">
+        <div className="absolute inset-0 grain-overlay opacity-40" />
+        <div className="absolute -top-16 -right-16 h-56 w-56 rounded-full bg-[#FBC02D]/20 blur-3xl" />
+        <div className="relative flex items-start gap-4">
+          <div className="h-14 w-14 md:h-16 md:w-16 grid place-items-center rounded-2xl bg-[#FBC02D] text-[#1A2E1A] shrink-0">
+            <Check className="h-7 w-7" strokeWidth={3} />
+          </div>
+          <div>
+            <div className="text-[10px] uppercase tracking-[0.28em] text-[#FBC02D]">
+              Booking Enquiry Received
+            </div>
+            <h3 className="mt-2 font-serif-display text-3xl md:text-4xl leading-tight">
+              Thanks, {first}! 🌿
+            </h3>
+            <p className="mt-3 text-sm md:text-base text-white/80 max-w-xl leading-relaxed">
+              We&rsquo;ve received your enquiry and sent a confirmation to{" "}
+              <strong className="text-white">{data.email}</strong>. Our team
+              will call you on <strong className="text-white">{data.phone}</strong>{" "}
+              within 24 hours to confirm your date and finalise the pricing.
+            </p>
+          </div>
+          <button
+            data-testid="booking-success-close"
+            aria-label="Close"
+            onClick={onClose}
+            className="ml-auto h-10 w-10 grid place-items-center rounded-full bg-white/10 hover:bg-white/20 transition-colors shrink-0"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+      </div>
+
+      <div className="px-6 md:px-10 py-8 space-y-6">
+        {/* Summary */}
+        <div className="rounded-2xl border border-[#E5E0D8] bg-white overflow-hidden">
+          <div className="px-5 py-3 bg-[#F4F1EA] text-[10px] uppercase tracking-[0.28em] text-[#2E7D32]">
+            Your Enquiry
+          </div>
+          <dl className="divide-y divide-[#E5E0D8] text-sm">
+            <SummaryRow k="Occasion" v={data.occasion || "Not specified"} />
+            <SummaryRow k="Date" v={data.event_date} />
+            <SummaryRow k="Start Time" v={data.start_time} />
+            <SummaryRow k="Duration" v={data.duration_hours ? `${data.duration_hours} hrs` : "To be confirmed"} />
+            <SummaryRow k="Members" v={data.members} />
+            <SummaryRow
+              k="Add-ons"
+              v={data.add_ons?.length ? data.add_ons.join(", ") : "None"}
+            />
+          </dl>
+        </div>
+
+        {/* Next steps */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <a
+            href={waHref}
+            target="_blank"
+            rel="noreferrer"
+            data-testid="booking-success-whatsapp"
+            className="group inline-flex items-center justify-center gap-3 bg-[#25D366] hover:bg-[#128C7E] text-white px-6 py-4 rounded-full font-medium tracking-wide transition-colors shadow-lg"
+          >
+            <MessageCircle className="h-5 w-5" />
+            Continue on WhatsApp
+            <ArrowRight className="h-4 w-4 group-hover:translate-x-0.5 transition-transform" />
+          </a>
+          <a
+            href="tel:+919861448443"
+            data-testid="booking-success-call"
+            className="inline-flex items-center justify-center gap-3 border border-[#2E7D32] text-[#2E7D32] hover:bg-[#2E7D32] hover:text-white px-6 py-4 rounded-full font-medium tracking-wide transition-colors"
+          >
+            <Phone className="h-5 w-5" />
+            Call +91 98614 48443
+          </a>
+        </div>
+
+        {/* Reference */}
+        <div className="flex items-center justify-between rounded-xl bg-[#F4F1EA] border border-[#E5E0D8] px-4 py-3">
+          <div className="text-xs text-[#6D4C41]">
+            Reference&nbsp;ID
+          </div>
+          <div className="text-xs font-mono text-[#1A2E1A]">{data.id}</div>
+        </div>
+
+        <p className="text-xs text-[#6D4C41] leading-relaxed">
+          Didn&rsquo;t see the email? Check your spam/promotions folder or drop
+          us a WhatsApp — we&rsquo;ll resend it.
+        </p>
+      </div>
+    </div>
+  );
+};
+
+const SummaryRow = ({ k, v }) => (
+  <div className="flex items-start justify-between gap-4 px-5 py-3">
+    <dt className="text-[#6D4C41] uppercase tracking-[0.22em] text-[10px] pt-0.5">{k}</dt>
+    <dd className="text-[#1A2E1A] text-right max-w-[65%]">{v}</dd>
+  </div>
+);
 
 const inputCls =
   "w-full bg-white border border-[#E5E0D8] focus:border-[#2E7D32] focus:ring-2 focus:ring-[#2E7D32]/15 rounded-xl px-4 py-3 outline-none transition-all text-[#1A2E1A] placeholder:text-[#6D4C41]/50";

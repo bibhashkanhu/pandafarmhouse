@@ -255,18 +255,99 @@ def _build_booking_html(b: Booking) -> str:
     """
 
 
+def _build_booking_customer_html(b: Booking) -> str:
+    addons = "".join(
+        f"<li style='margin:4px 0;'>&#10003; {a}</li>" for a in b.add_ons
+    ) or "<li style='margin:4px 0; color:#6D4C41;'>None selected</li>"
+    return f"""
+    <table width="100%" cellpadding="0" cellspacing="0" style="font-family: Arial, Helvetica, sans-serif; background:#FDFBF7; padding:24px;">
+      <tr><td>
+        <table width="100%" style="max-width:640px; margin:0 auto; background:#ffffff; border:1px solid #E5E0D8; border-radius:12px; overflow:hidden;">
+          <tr>
+            <td style="background:#2E7D32; padding:28px 28px 22px 28px; color:#fff;">
+              <div style="font-size:11px; letter-spacing:3px; color:#FBC02D;">PANDA FARM HOUSE</div>
+              <div style="font-size:26px; margin-top:8px; font-family: Georgia, 'Times New Roman', serif;">Thanks, {b.name.split(' ')[0]}! 🌿</div>
+              <div style="font-size:14px; margin-top:6px; opacity:0.85;">We&rsquo;ve received your booking enquiry.</div>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:26px 28px; color:#1A2E1A; line-height:1.6;">
+              <p style="margin:0 0 14px 0;">
+                Our team will personally call you within <strong>24 hours</strong> on
+                <strong>{b.phone}</strong> to confirm availability, walk through your
+                add-ons and finalise the pricing for your event.
+              </p>
+              <p style="margin:0 0 20px 0; color:#6D4C41;">
+                Meanwhile, here&rsquo;s a copy of what you shared with us:
+              </p>
+
+              <table width="100%" style="border:1px solid #E5E0D8; border-radius:8px; border-collapse:separate; border-spacing:0;">
+                <tr><td style="padding:12px 16px; border-bottom:1px solid #E5E0D8;"><strong>Occasion:</strong> {b.occasion or 'Not specified'}</td></tr>
+                <tr><td style="padding:12px 16px; border-bottom:1px solid #E5E0D8;"><strong>Date:</strong> {b.event_date}</td></tr>
+                <tr><td style="padding:12px 16px; border-bottom:1px solid #E5E0D8;"><strong>Start Time:</strong> {b.start_time}</td></tr>
+                <tr><td style="padding:12px 16px; border-bottom:1px solid #E5E0D8;"><strong>Estimated Duration:</strong> {b.duration_hours or 'To be confirmed'} hrs</td></tr>
+                <tr><td style="padding:12px 16px;"><strong>Total Members:</strong> {b.members}</td></tr>
+              </table>
+
+              <h4 style="margin:22px 0 8px 0; color:#2E7D32; font-size:13px; letter-spacing:2px; text-transform:uppercase;">Add-ons Requested</h4>
+              <ul style="margin:0; padding-left:18px; color:#1A2E1A;">{addons}</ul>
+
+              <div style="margin-top:24px; padding:14px 16px; background:#F4F1EA; border-left:4px solid #FBC02D; border-radius:6px;">
+                <strong style="color:#1A2E1A;">Price:</strong>
+                <span style="color:#6D4C41;">
+                  Booking starts from <strong>&#8377;1,499/hr</strong>. Final price
+                  depends on your date, guest count and add-ons &mdash; our team
+                  will share it during the call. Terms &amp; conditions apply.
+                </span>
+              </div>
+
+              <div style="margin-top:22px; padding:16px; background:#1A2E1A; border-radius:10px; color:#fff; text-align:center;">
+                <div style="font-size:11px; letter-spacing:2px; color:#FBC02D;">NEED SOMETHING URGENT?</div>
+                <div style="margin-top:6px; font-size:15px;">
+                  Call us on <a href="tel:+919861448443" style="color:#FBC02D; text-decoration:none;">+91 98614 48443</a>
+                  &nbsp;·&nbsp; WhatsApp <a href="https://wa.me/918328830796" style="color:#FBC02D; text-decoration:none;">+91 83288 30796</a>
+                </div>
+              </div>
+
+              <p style="margin:24px 0 0 0; font-size:12px; color:#6D4C41;">
+                Reference&nbsp;ID: <code>{b.id}</code>
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td style="background:#F4F1EA; padding:16px 28px; text-align:center; font-size:12px; color:#6D4C41;">
+              Panda Farm House &middot; Banaparia, Balasore, Odisha 756056
+            </td>
+          </tr>
+        </table>
+      </td></tr>
+    </table>
+    """
+
+
 @api_router.post("/booking", response_model=Booking)
 async def create_booking(payload: BookingCreate):
     booking = Booking(**payload.model_dump())
 
-    subject = f"[Panda Farm House] Booking Request — {booking.name} on {booking.event_date}"
-    email_ok = await _send_email(
+    # 1) Notify the farm team
+    owner_subject = f"[Panda Farm House] Booking Request — {booking.name} on {booking.event_date}"
+    owner_ok = await _send_email(
         to=CONTACT_RECIPIENT_EMAIL,
-        subject=subject,
+        subject=owner_subject,
         html=_build_booking_html(booking),
         reply_to=booking.email,
     )
-    booking.email_sent = email_ok
+
+    # 2) Auto-confirmation to the customer
+    customer_subject = "We've received your booking enquiry — Panda Farm House"
+    customer_ok = await _send_email(
+        to=booking.email,
+        subject=customer_subject,
+        html=_build_booking_customer_html(booking),
+        reply_to=CONTACT_RECIPIENT_EMAIL,
+    )
+
+    booking.email_sent = bool(owner_ok and customer_ok)
 
     doc = booking.model_dump()
     doc["created_at"] = doc["created_at"].isoformat()
