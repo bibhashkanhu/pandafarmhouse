@@ -1,0 +1,5 @@
+/* Component-scoped tweaks for Panda Farm House */
+.App {
+  min-height: 100vh;
+  background-color: var(--pfh-cream);
+}

@@ -1,0 +1,27 @@
+{
+  "summary": "Iteration 3 — Verified bug fix for BookingDialog scroll/focus behavior. On dialog open (via events-book-cta), header 'Book an Appointment' + Full Name/Phone/Email inputs are visible at the top of viewport, name input is auto-focused, and dialog scrollTop resets to 0. On invalid submit after scrolling down (scrollTop=1500), each of the 6 required fields (name → email → phone → event_date → start_time → members) shows the correct toast message AND the modal scrolls back so the target field is visible AND the field receives focus (document.activeElement matches). Verified on both Desktop (1280x800) and Mobile (390x844). Regression: full happy-path submission still POSTs to /api/booking and opens WhatsApp (wa.me/918328830796 → redirects to api.whatsapp.com/send with phone=918328830796 and prefilled details), dialog auto-closes, form resets on reopen. Overlay-click close and X-close both still work. Events section pricing card '₹1,499/hr' still renders.",
+  "backend_issues": { "critical": [], "minor": [] },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/backend_test.py"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "BookingDialog.jsx: The whole overlay <div> is `scrollRef` AND is also the click-to-close backdrop. Because it uses onMouseDown checking `e.target === e.currentTarget`, this still works, but if scroll behavior ever changes, be careful: the same node is the scroll container AND overlay. Consider decoupling by putting the scrollable inner-wrapper inside the overlay div.",
+    "BookingDialog.jsx: `focusField` uses a fixed 120px top offset from container top. On very small mobile heights this is still ok (verified name/email land at top≈120px which is under the sticky header). Consider making the offset dynamic based on modal header height for future-proofing.",
+    "BookingDialog.jsx: useEffect dep-array eslint-disabled — acceptable given `refs` is a stable ref-object, but could add just `[open]` explicitly and reference refs via closure to silence lint properly.",
+    "Events.jsx: 'Check Availability' button still uses testid `hero-cta-contact-events` (from FARM.heroCtaContact + '-events'). Renaming to `events-book-cta-bottom` would remove the naming collision noted in iteration_2."
+  ],
+  "updated_files": [],
+  "success_rate": { "backend": "N/A (not requested)", "frontend": "100%" },
+  "test_credentials": "N/A (no auth)",
+  "seed_data_creation": "One additional 'TEST Regression D' booking created via UI submit during regression happy-path test (MongoDB bookings collection).",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "BookingDialog fix verified end-to-end. Note for future: window.open('wa.me/...') results in Playwright popup.url being the redirected 'api.whatsapp.com/send/?phone=...' URL, not 'wa.me/...'. Assert on 'phone=918328830796' substring (safer) instead of exact 'wa.me/918328830796'. All 6 required-field scroll/focus behaviours (name/email/phone/event_date/start_time/members) confirmed working on both desktop 1280x800 and mobile 390x844. Positions verified: on open name.top≈361px (desktop) / 350px (mobile); after scroll-back to name.top≈120px (below header offset).",
+  "rca of the issue": "Original bug: modal used items-center on desktop and no initial scroll reset, so if user scrolled down inside the tall form the first fields (name/email/phone) were off-screen and validation errors ('Please enter your name.') gave no visual cue. Fix (verified in this iteration): (a) outer wrapper switched to items-start so scrollTop=0 always reveals header+first fields, (b) useEffect on open resets scrollRef.current.scrollTop=0 and auto-focuses name via 60ms setTimeout, (c) validate() returns {msg, field} and focusField(field) scrolls dialog container so the invalid field's rect sits ~120px from container top, then focuses it with preventScroll to avoid double-jump. All 6 field-level scroll+focus cases verified pass."
+}
