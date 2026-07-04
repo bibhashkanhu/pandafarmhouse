@@ -23,7 +23,7 @@ import {
   Check,
 } from "lucide-react";
 
-const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
+const API = (process.env.REACT_APP_BACKEND_URL || "").replace(/\/$/, "") + "/api";
 const WHATSAPP_NUMBER = "918328830796";
 
 const OCCASIONS = [
