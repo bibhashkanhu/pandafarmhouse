@@ -1,5 +1,11 @@
 {
     "buildCommand": "cd frontend && yarn install && yarn build",
     "outputDirectory": "frontend/build",
-    "framework": null
+    "framework": null,
+    "rewrites": [
+        {
+            "source": "/api/:path*",
+            "destination": "https://panda-farm-house.preview.emergentagent.com/api/:path*"
+        }
+    ]
 }
