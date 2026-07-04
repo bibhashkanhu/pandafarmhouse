@@ -108,6 +108,7 @@ const BookingDialog = ({ open, onClose }) => {
       scrollRef.current.scrollTop = 0;
       if (!success) setTimeout(() => refs.name.current?.focus(), 60);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, success]); // deps intentional
 
   const handleClose = () => {
