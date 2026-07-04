@@ -4,7 +4,7 @@
     "rewrites": [
         {
             "source": "/api/:path*",
-            "destination": "https://panda-farm-house.preview.emergentagent.com/api/:path*"
+            "destination": "/api/:path*"
         }
     ]
 }
